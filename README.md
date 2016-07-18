@@ -2,7 +2,7 @@
 
 Parses Twitch Overwatch tournament VODs for hero picks.
 
-Example output: [google sheet](https://docs.google.com/spreadsheets/d/1Uvilc3Hj9vp2YDRrV5uaHfyOjms3Wy0PC8qVgy065SE/edit#gid=692476966) (calculations have been added manually)
+Example output: [google sheet](https://docs.google.com/spreadsheets/d/1Uvilc3Hj9vp2YDRrV5uaHfyOjms3Wy0PC8qVgy065SE/edit?usp=sharing) (calculations have been added manually)
 
 Can be built with VS 2013+ or GCC 4.7+. Requires OpenCV 3.0 (both) and cURL (GCC).
 
