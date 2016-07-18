@@ -1,0 +1,23 @@
+{
+  "bastion": 0.95,
+  "dva": 0.92,
+  "genji": 0.92,
+  "hanzo": 0.92,
+  "junkrat": 0.92,
+  "lucio": 0.92,
+  "mccree": 0.92,
+  "mei": 0.92,
+  "mercy": 0.92,
+  "pharah": 0.92,
+  "reaper": 0.92,
+  "reinhardt": 0.92,
+  "roadhog": 0.92,
+  "soldier76": 0.92,
+  "symmetra": 0.92,
+  "torbjorn": 0.92,
+  "tracer": 0.92,
+  "widowmaker": 0.92,
+  "winston": 0.92,
+  "zarya": 0.95,
+  "zenyatta": 0.95
+}
