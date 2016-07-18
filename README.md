@@ -16,4 +16,4 @@ The program saves its current execution status in a `json` file, so you can clos
 
 ### Source code notes
 
-Most of the generic code was copied from my other projects. The relevant code is in `vod.h/cpp` (downloading VOD chunks), `match.h/cpp` (pattern matching, identical to OpenCV `matchTemplate` with `CV_TM_CCORR_NORMED` but supports alpha mask) and `main.cpp` containing the application logic.
+Most of the generic code was copied from my other projects, its only used for HTTP requests and JSON parsing. The relevant code is in `vod.h/cpp` (downloading VOD chunks), `match.h/cpp` (pattern matching, identical to OpenCV `matchTemplate` with `CV_TM_CCORR_NORMED` but supports alpha mask) and `main.cpp` containing the application logic.
