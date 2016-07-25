@@ -7,6 +7,7 @@
 #ifdef _MSC_VER
 #include <windows.h>
 #else
+#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #endif
@@ -65,7 +66,7 @@ void _qmemset(uint32* mem, uint32 fill, uint32 count) {
   #ifdef _DEBUG
     #pragma comment(lib, "zlib/zlib64d.lib")
   #else
-    #pragma comment(lib, "zlib/zlib64rs.lib")
+    #pragma comment(lib, "zlib/zlib64r.lib")
   #endif
 #else
   #ifdef _DEBUG
@@ -334,3 +335,11 @@ uint32 GetTickCount() {
   return msec_since_epoch() - initial;
 }
 #endif
+
+void rename_file(char const* src, char const* dst) {
+#ifdef _MSC_VER
+  MoveFile(src, dst);
+#else
+  rename(src, dst);
+#endif
+}

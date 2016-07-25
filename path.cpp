@@ -49,6 +49,27 @@ string path::ext(string const& path) {
   }
 }
 
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
+
+string path::root() {
+  static string rp;
+  if (rp.empty()) {
+    char buffer[512];
+#ifdef _MSC_VER
+    GetModuleFileName(GetModuleHandle(NULL), buffer, sizeof buffer);
+#else
+    readlink("/proc/self/exe", buffer, sizeof buffer);
+#endif
+    rp = path(buffer);
+#ifdef _DEBUG
+    rp = "G:\\Progs\\VodScanner";
+#endif
+  }
+  return rp;
+}
+
 string operator / (string const& lhs, string const& rhs) {
   if (lhs.empty() || rhs.empty()) return lhs + rhs;
   bool left = (lhs.back() == '\\' || lhs.back() == '/');

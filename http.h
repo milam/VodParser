@@ -1,10 +1,17 @@
 #pragma once
 
 #ifdef _MSC_VER
+#define USE_WINHTTP
+#endif
+
+#ifdef USE_WINHTTP
 #define NOMINMAX
 #include <windows.h>
-#include <winhttp.h>
+#include <wininet.h>
 #else
+#ifdef _MSC_VER
+#define CURL_STATICLIB
+#endif
 #include <curl/curl.h>
 #endif
 
@@ -30,7 +37,7 @@ public:
   static File get(std::string const& url);
 
 private:
-#ifdef _MSC_VER
+#ifdef USE_WINHTTP
   struct SessionHolder {
     HINTERNET session = nullptr;
     HINTERNET connect = nullptr;
@@ -39,7 +46,7 @@ private:
   };
   friend class HttpBuffer;
   std::shared_ptr<SessionHolder> handles_;
-  std::wstring headers_;
+  std::string headers_;
 #else
   struct Response {
     std::string headers;

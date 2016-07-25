@@ -270,6 +270,7 @@ T flipped(T x) {
 size_t file_size(char const* path);
 void delete_file(char const* path);
 void create_dir(char const* path);
+void rename_file(char const* src, char const* dst);
 
 #ifndef _MSC_VER
 uint32 GetTickCount();

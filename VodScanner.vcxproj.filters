@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\frameui">
+      <UniqueIdentifier>{740bd657-7344-41c8-9de8-cbebe93f695a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\frameui">
+      <UniqueIdentifier>{5edd65e5-6e61-4dbb-9552-bcfdfc2c1a25}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -43,6 +49,30 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="match.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="frameui\controlframes.cpp">
+      <Filter>Source Files\frameui</Filter>
+    </ClCompile>
+    <ClCompile Include="frameui\fontsys.cpp">
+      <Filter>Source Files\frameui</Filter>
+    </ClCompile>
+    <ClCompile Include="frameui\frame.cpp">
+      <Filter>Source Files\frameui</Filter>
+    </ClCompile>
+    <ClCompile Include="frameui\framewnd.cpp">
+      <Filter>Source Files\frameui</Filter>
+    </ClCompile>
+    <ClCompile Include="frameui\searchlist.cpp">
+      <Filter>Source Files\frameui</Filter>
+    </ClCompile>
+    <ClCompile Include="frameui\window.cpp">
+      <Filter>Source Files\frameui</Filter>
+    </ClCompile>
+    <ClCompile Include="chunkqueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="winmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,5 +107,42 @@
     <ClInclude Include="match.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="frameui\controlframes.h">
+      <Filter>Header Files\frameui</Filter>
+    </ClInclude>
+    <ClInclude Include="frameui\fontsys.h">
+      <Filter>Header Files\frameui</Filter>
+    </ClInclude>
+    <ClInclude Include="frameui\frame.h">
+      <Filter>Header Files\frameui</Filter>
+    </ClInclude>
+    <ClInclude Include="frameui\framewnd.h">
+      <Filter>Header Files\frameui</Filter>
+    </ClInclude>
+    <ClInclude Include="frameui\searchlist.h">
+      <Filter>Header Files\frameui</Filter>
+    </ClInclude>
+    <ClInclude Include="frameui\window.h">
+      <Filter>Header Files\frameui</Filter>
+    </ClInclude>
+    <ClInclude Include="chunkqueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="VodScanner.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Overwatch_107.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

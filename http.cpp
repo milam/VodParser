@@ -3,7 +3,25 @@
 #include "common.h"
 #include <algorithm>
 
-#ifndef _MSC_VER
+#ifndef USE_WINHTTP
+
+#ifdef _MSC_VER
+
+#ifdef _DEBUG
+#pragma comment(lib, "libcurld.lib")
+#pragma comment(lib, "libssh2d.lib")
+#else
+#pragma comment(lib, "libcurl.lib")
+#pragma comment(lib, "libssh2.lib")
+#endif
+
+#pragma comment(lib, "libeay32.lib")
+#pragma comment(lib, "ssleay32.lib")
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "crypt32.lib")
+#pragma comment(lib, "wldap32.lib")
+#endif
+
 #include <curl/curl.h>
 #endif
 
@@ -34,21 +52,20 @@ void HttpRequest::addData(std::string const& key, std::string const& value) {
   post_.append(urlencode(value));
 }
 
-#ifdef _MSC_VER
+#ifdef USE_WINHTTP
 
-#pragma comment(lib, "winhttp.lib")
+#pragma comment(lib, "wininet.lib")
 
 HttpRequest::SessionHolder::~SessionHolder() {
-  if (request) WinHttpCloseHandle(request);
-  if (connect) WinHttpCloseHandle(connect);
-  if (session) WinHttpCloseHandle(session);
+  if (request) InternetCloseHandle(request);
+  if (connect) InternetCloseHandle(connect);
+  if (session) InternetCloseHandle(session);
 }
 
 HttpRequest::HttpRequest(std::string const& url, RequestType type)
   : type_(type)
   , handles_(new SessionHolder)
 {
-  std::wstring url16 = utf8_to_utf16(url);
   URL_COMPONENTS urlComp;
   memset(&urlComp, 0, sizeof urlComp);
   urlComp.dwStructSize = sizeof urlComp;
@@ -57,49 +74,45 @@ HttpRequest::HttpRequest(std::string const& url, RequestType type)
   urlComp.dwUrlPathLength = -1;
   urlComp.dwExtraInfoLength = -1;
 
-  if (!WinHttpCrackUrl(url16.c_str(), url.size(), 0, &urlComp)) {
+  if (!InternetCrackUrl(url.c_str(), url.size(), 0, &urlComp)) {
     return;
   }
 
-  std::wstring host(urlComp.lpszHostName, urlComp.dwHostNameLength);
-  std::wstring path(urlComp.lpszUrlPath, urlComp.dwUrlPathLength + urlComp.dwExtraInfoLength);
+  std::string host(urlComp.lpszHostName, urlComp.dwHostNameLength);
+  std::string path(urlComp.lpszUrlPath, urlComp.dwUrlPathLength + urlComp.dwExtraInfoLength);
 
-  handles_->session = WinHttpOpen(L"SNOParser", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, NULL, NULL, 0);
+  handles_->session = InternetOpen("SNOParser", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
   if (!handles_->session) return;
-  handles_->connect = WinHttpConnect(handles_->session, host.c_str(), urlComp.nPort, 0);
+  handles_->connect = InternetConnect(handles_->session, host.c_str(), urlComp.nPort, NULL, NULL, INTERNET_SERVICE_HTTP, 0, NULL);
   if (!handles_->connect) return;
-  handles_->request = WinHttpOpenRequest(
-    handles_->connect,
-    type == GET ? L"GET" : L"POST",
-    path.c_str(),
-    L"HTTP/1.1",
-    WINHTTP_NO_REFERER,
-    WINHTTP_DEFAULT_ACCEPT_TYPES,
-    (urlComp.nScheme == INTERNET_SCHEME_HTTPS ? WINHTTP_FLAG_SECURE : 0) | WINHTTP_FLAG_BYPASS_PROXY_CACHE);
+  handles_->request = HttpOpenRequest(
+    handles_->connect, type == GET ? "GET" : "POST", path.c_str(), "HTTP/1.1", NULL, NULL,
+    (urlComp.nScheme == INTERNET_SCHEME_HTTPS ? INTERNET_FLAG_SECURE : 0) | INTERNET_FLAG_RELOAD, NULL);
+  if (handles_->request) {
+    BOOL value = TRUE;
+    InternetSetOption(handles_->request, INTERNET_OPTION_HTTP_DECODING, &value, sizeof value);
+  }
 }
 
 void HttpRequest::addHeader(std::string const& header) {
-  headers_.append(utf8_to_utf16(header));
-  headers_.append(L"\r\n");
+  headers_.append(header);
+  headers_.append("\r\n");
 }
 
 bool HttpRequest::send() {
   if (!handles_->request) return false;
-  if (!WinHttpSendRequest(handles_->request,
+  return HttpSendRequest(handles_->request,
     headers_.empty() ? nullptr : headers_.c_str(), headers_.size(),
-    post_.empty() ? nullptr : &post_[0], post_.size(), post_.size(), 0)) {
-    return false;
-  }
-  return WinHttpReceiveResponse(handles_->request, NULL);
+    post_.empty() ? nullptr : &post_[0], post_.size());
 }
 
 uint32 HttpRequest::status() {
   if (!handles_->request) return 0;
 
   DWORD statusCode = 0;
-  uint32 size = sizeof statusCode;
-  WinHttpQueryHeaders(handles_->request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX,
-    &statusCode, reinterpret_cast<DWORD*>(&size), WINHTTP_NO_HEADER_INDEX);
+  DWORD size = sizeof statusCode;
+  HttpQueryInfo(handles_->request, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
+    &statusCode, &size, NULL);
   return statusCode;
 }
 
@@ -160,8 +173,8 @@ public:
     }
     while (pos_ + size > loaded_) {
       DWORD nsize = 0, nread;
-      if (!WinHttpQueryDataAvailable(handles_->request, &nsize) || !nsize) break;
-      WinHttpReadData(handles_->request, data_ + loaded_, std::min<DWORD>(nsize, size_ - loaded_), &nread);
+      if (!InternetQueryDataAvailable(handles_->request, &nsize, 0, 0) || !nsize) break;
+      InternetReadFile(handles_->request, data_ + loaded_, std::min<DWORD>(nsize, size_ - loaded_), &nread);
       loaded_ += nread;
     }
     if (size + pos_ > loaded_) {
@@ -184,20 +197,34 @@ File HttpRequest::response() {
 
   DWORD contentLength = 0;
   DWORD size = (sizeof contentLength);
-  WinHttpQueryHeaders(handles_->request, WINHTTP_QUERY_CONTENT_LENGTH | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX,
-    &contentLength, &size, WINHTTP_NO_HEADER_INDEX);
+  HttpQueryInfo(handles_->request, HTTP_QUERY_CONTENT_LENGTH | HTTP_QUERY_FLAG_NUMBER,
+    &contentLength, &size, NULL);
 
-  return File(new HttpBuffer(handles_, contentLength));
+  if (contentLength) {
+    return File(new HttpBuffer(handles_, contentLength));
+  } else {
+    DWORD size = 0, read;
+    MemoryFile file;
+    do {
+      if (!InternetQueryDataAvailable(handles_->request, &size, 0, 0)) return File();
+      if (!size) break;
+      size_t cur_size = file.size();
+      if (!InternetReadFile(handles_->request, file.reserve(size), size, &read)) return File();
+      if (read < size) file.resize(cur_size + read);
+    } while (size);
+    file.seek(0);
+    return file;
+  }
 }
 
 std::map<std::string, std::string> HttpRequest::headers() {
   std::map<std::string, std::string> result;
   if (!handles_->request) return result;
   DWORD size;
-  WinHttpQueryHeaders(handles_->request, WINHTTP_QUERY_RAW_HEADERS, WINHTTP_HEADER_NAME_BY_INDEX, nullptr, &size, WINHTTP_NO_HEADER_INDEX);
+  HttpQueryInfo(handles_->request, HTTP_QUERY_RAW_HEADERS, nullptr, &size, NULL);
   if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) return result;
   std::vector<wchar_t> raw((size + 1) / sizeof(wchar_t));
-  WinHttpQueryHeaders(handles_->request, WINHTTP_QUERY_RAW_HEADERS, WINHTTP_HEADER_NAME_BY_INDEX, &raw[0], &size, WINHTTP_NO_HEADER_INDEX);
+  HttpQueryInfo(handles_->request, HTTP_QUERY_RAW_HEADERS, &raw[0], &size, NULL);
   std::wstring cur;
   for (wchar_t wc : raw) {
     if (wc) {
