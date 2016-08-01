@@ -104,6 +104,7 @@ Value::Value(Value const& rhs)
 }
 
 Value& Value::operator=(Value const& rhs) {
+  if (&rhs == this) return *this;
   clear();
   type_ = rhs.type_;
   switch (type_) {

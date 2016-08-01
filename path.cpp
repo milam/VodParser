@@ -64,7 +64,7 @@ string path::root() {
 #endif
     rp = path(buffer);
 #ifdef _DEBUG
-    rp = "G:\\Progs\\VodScanner";
+    rp = "F:\\Progs\\VodScanner";
 #endif
   }
   return rp;

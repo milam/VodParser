@@ -249,3 +249,19 @@ public:
   void setNoDate();
   void setDate(uint64 date);
 };
+
+class ListFrame : public WindowFrame {
+public:
+  ListFrame(Frame* parent, int id = 0, int style = LVS_ALIGNLEFT | LVS_REPORT |
+    LVS_NOCOLUMNHEADER | LVS_NOSCROLL | LVS_SINGLESEL, int styleEx = WS_EX_CLIENTEDGE);
+  void clear();
+  void setColumns(int numColumns);
+  void setColumn(int column, int width, int fmt);
+  void setColumnWidth(int column, int width);
+  void setColumn(int column, int width, std::string const& text);
+  int addItem(std::string const& name);
+  int addItem(std::string const& name, uint32 param);
+  int insertItem(int pos, std::string const& name);
+  void setItemText(int item, int column, std::string const& text);
+  void setItemTextUtf8(int item, int column, std::string const& text);
+};

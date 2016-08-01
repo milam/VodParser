@@ -19,9 +19,8 @@ struct ChunkOutput {
   bool success = false;
   size_t index;
   bool prepare = false;
-  VOD::Chunk chunk;
+  Video::Chunk chunk;
   HeroLineup lineup;
-  cv::Mat frame;
 };
 
 class ChunkQueue : private JobQueue<size_t, ChunkOutput> {
@@ -36,11 +35,12 @@ public:
   void join();
   void start();
 
+  enum { REPORT_PROGRESS, REPORT_FINISHED, REPORT_STOPPED };
+
 protected:
   json::Value config_;
-  VOD vod_;
+  std::unique_ptr<Video> vod_;
 
-  enum { REPORT_PROGRESS, REPORT_FINISHED, REPORT_STOPPED };
   virtual void report(int status, double time, cv::Mat const& frame) {}
 
 private:

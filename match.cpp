@@ -1,10 +1,18 @@
 #include "match.h"
 
 #ifdef _MSC_VER
+#ifdef _WIN64
 #ifdef _DEBUG
 #pragma comment(lib, "opencv_world310d.lib")
 #else
-#pragma comment(lib, "opencv_world310.lib")
+#pragma comment(lib, "opencv_world310.lib") 
+#endif
+#else
+#ifdef _DEBUG
+#pragma comment(lib, "opencv_world300d.lib")
+#else
+#pragma comment(lib, "opencv_world300.lib") 
+#endif
 #endif
 #endif
 

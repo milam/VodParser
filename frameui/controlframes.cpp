@@ -668,3 +668,95 @@ LRESULT RangeSliderFrame::onMessage(uint32 message, WPARAM wParam, LPARAM lParam
     return M_UNHANDLED;
   }
 }
+
+ListFrame::ListFrame(Frame* parent, int id, int style, int styleEx)
+  : WindowFrame(parent)
+{
+  create(WC_LISTVIEW, "", WS_CHILD | WS_TABSTOP | style, styleEx);
+  setFont(FontSys::getSysFont());
+  setId(id);
+}
+void ListFrame::clear() {
+  ListView_DeleteAllItems(hWnd);
+}
+void ListFrame::setColumns(int numColumns) {
+  for (int i = Header_GetItemCount(ListView_GetHeader(hWnd)) - 1; i >= numColumns; i--) {
+    ListView_DeleteColumn(hWnd, i);
+  }
+  LVCOLUMN lvc;
+  memset(&lvc, 0, sizeof lvc);
+  lvc.mask = LVCF_FMT | LVCF_TEXT;
+  lvc.fmt = LVCFMT_LEFT;
+  lvc.pszText = "";
+  for (int i = Header_GetItemCount(ListView_GetHeader(hWnd)); i < numColumns; i++) {
+    ListView_InsertColumn(hWnd, i, &lvc);
+  }
+}
+void ListFrame::setColumn(int column, int width, int fmt) {
+  LVCOLUMN lvc;
+  memset(&lvc, 0, sizeof lvc);
+  lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+  lvc.fmt = fmt;
+  lvc.cx = width;
+  lvc.pszText = "";
+  ListView_SetColumn(hWnd, column, &lvc);
+}
+void ListFrame::setColumnWidth(int column, int width) {
+  ListView_SetColumnWidth(hWnd, column, width);
+}
+void ListFrame::setColumn(int column, int width, std::string const& text) {
+  LVCOLUMN lvc;
+  memset(&lvc, 0, sizeof lvc);
+  lvc.mask = LVCF_TEXT | LVCF_WIDTH;
+  lvc.cx = width;
+  lvc.pszText = const_cast<char*>(text.data());
+  ListView_SetColumn(hWnd, column, &lvc);
+}
+int ListFrame::addItem(std::string const& name) {
+  LVITEM lvi;
+  memset(&lvi, 0, sizeof lvi);
+  lvi.iItem = ListView_GetItemCount(hWnd);
+  lvi.mask = LVIF_TEXT;
+  lvi.pszText = const_cast<char*>(name.data());
+  ListView_InsertItem(hWnd, &lvi);
+  return lvi.iItem;
+}
+int ListFrame::insertItem(int pos, std::string const& name) {
+  LVITEM lvi;
+  memset(&lvi, 0, sizeof lvi);
+  lvi.iItem = pos;
+  lvi.mask = LVIF_TEXT;
+  lvi.pszText = const_cast<char*>(name.data());
+  ListView_InsertItem(hWnd, &lvi);
+  return lvi.iItem;
+}
+int ListFrame::addItem(std::string const& name, uint32 param) {
+  LVITEM lvi;
+  memset(&lvi, 0, sizeof lvi);
+  lvi.iItem = ListView_GetItemCount(hWnd);
+  lvi.mask = LVIF_TEXT | LVIF_PARAM;
+  lvi.pszText = const_cast<char*>(name.data());
+  lvi.lParam = param;
+  ListView_InsertItem(hWnd, &lvi);
+  return lvi.iItem;
+}
+void ListFrame::setItemText(int item, int column, std::string const& text) {
+  LVITEM lvi;
+  memset(&lvi, 0, sizeof lvi);
+  lvi.iItem = item;
+  lvi.iSubItem = column;
+  lvi.mask = LVIF_TEXT;
+  lvi.pszText = const_cast<char*>(text.data());
+  ListView_SetItem(hWnd, &lvi);
+}
+void ListFrame::setItemTextUtf8(int item, int column, std::string const& text) {
+  std::wstring wtext = utf8_to_utf16(text);
+
+  LVITEMW lvi;
+  memset(&lvi, 0, sizeof lvi);
+  lvi.iItem = item;
+  lvi.iSubItem = column;
+  lvi.mask = LVIF_TEXT;
+  lvi.pszText = const_cast<wchar_t*>(wtext.data());
+  SendMessage(hWnd, LVM_SETITEMW, 0, (LPARAM) &lvi);
+}

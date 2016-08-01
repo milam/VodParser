@@ -72,12 +72,12 @@ void threshold_image(cv::Mat& image) {
 
 ChunkQueue::ChunkQueue(json::Value const& config)
   : config_(config)
-  , vod_(config["vod_id"].getInteger())
+  , vod_(Video::open(config))
   , path_(config["path"].getString())
-  , ctx_(cv::Size(vod_.width(), vod_.height() / 5))
+  , ctx_(cv::Size(vod_->width(), vod_->height() / 5))
   , last_index_(0)
 {
-  double factor = vod_.width() / 1920.0;
+  double factor = vod_->width() / 1920.0;
   assemble_ = cv::imread(path::root() / "heroes/assemble.png");
   prepare_ = cv::imread(path::root() / "heroes/prepare.png");
   cv::cvtColor(assemble_, assemble_, cv::COLOR_BGR2GRAY);
@@ -92,6 +92,9 @@ ChunkQueue::ChunkQueue(json::Value const& config)
   for (auto const& kv : hero_list.getMap()) {
     cv::Mat icon = cv::imread(path::root() / fmtstring("heroes/%s.png", kv.first.c_str()), -1);
     if (icon.empty()) continue;
+    if (icon.rows > 30) {
+      icon = icon(cv::Rect(0, icon.rows - 30, icon.cols, 30));
+    }
     sprites_.emplace_back(kv.first, icon, kv.second.getNumber(), ctx_);
   }
 
@@ -108,9 +111,9 @@ ChunkQueue::ChunkQueue(json::Value const& config)
 
   double start_time = config["start_time"].getNumber();
   double end_time = config["end_time"].getNumber();
-  for (size_t index = current; index < vod_.size(); ++index) {
-    if (vod_.duration(index + 1) <= start_time) continue;
-    if (vod_.duration(index) >= end_time) break;
+  for (size_t index = current; index < vod_->size(); ++index) {
+    if (vod_->duration(index + 1) <= start_time) continue;
+    if (vod_->duration(index) >= end_time) break;
 
     push(index);
     last_index_ = index + 1;
@@ -141,14 +144,9 @@ void ChunkQueue::start() {
 void ChunkQueue::process(size_t const& index, ChunkOutput& output) {
   output.index = index;
 
-  VOD::Chunk& chunk = output.chunk;
-  if (!vod_.load(index, chunk)) return;
-  cv::VideoCapture video(chunk.path);
-  if (!video.isOpened()) return;
-  video >> output.frame;
-  video.release();
-  if (output.frame.empty()) return;
-  cv::Mat frame = output.frame(cv::Rect(0, 0, output.frame.cols, output.frame.rows / 5));
+  Video::Chunk& chunk = output.chunk;
+  if (!vod_->load(index, chunk)) return;
+  cv::Mat frame = chunk.frame(cv::Rect(0, 0, chunk.frame.cols, chunk.frame.rows / 5));
   MatchFrame mf(frame, ctx_);
 
   std::vector<MatchInfo> matches;
@@ -215,9 +213,7 @@ void ChunkQueue::consume(ChunkQueue* queue) {
   cv::Mat match_frame = cv::imread(queue->path_ / "temp_frame.png");
   while (queue->pop(output)) {
     if (!output.success) {
-      if (output.chunk.path.size()) {
-        delete_file(output.chunk.path.c_str());
-      }
+      queue->vod_->delete_cache(output.chunk.index);
       continue;
     }
 
@@ -236,7 +232,7 @@ void ChunkQueue::consume(ChunkQueue* queue) {
           if (output.lineup.red[i].empty()) output.lineup.red[i] = last["red"][i].getString();
         }
       } else {
-        match_frame = output.frame;
+        match_frame = output.chunk.frame;
       }
       json::Value frame;
       frame["start"] = output.chunk.start;
@@ -249,9 +245,10 @@ void ChunkQueue::consume(ChunkQueue* queue) {
     }
 
     if (queue->config_["delete_chunks"].getBoolean()) {
-      delete_file(output.chunk.path.c_str());
+      queue->vod_->delete_cache(output.chunk.index);
     }
     queue->result_["current"] = output.index + 1;
+    queue->result_["config"]["resume"] = output.chunk.start + output.chunk.duration;
     if (output.index >= last_flush + 16) {
       last_flush = output.index;
       if (!match_frame.empty()) cv::imwrite(queue->path_ / "temp_frame.png", match_frame);
@@ -259,14 +256,14 @@ void ChunkQueue::consume(ChunkQueue* queue) {
     }
 
     last_time = output.chunk.start + output.chunk.duration;
-    queue->report(REPORT_PROGRESS, last_time, output.frame);
+    queue->report(REPORT_PROGRESS, last_time, output.chunk.frame);
   }
 
   if (queue->result_["current"].getInteger() >= queue->last_index_) {
     if (frames.length()) queue->flush_match(match_frame);
-    queue->report(REPORT_FINISHED, queue->config_["end_time"].getNumber(), output.frame);
+    queue->report(REPORT_FINISHED, queue->config_["end_time"].getNumber(), output.chunk.frame);
   } else {
-    queue->report(REPORT_STOPPED, last_time, output.frame);
+    queue->report(REPORT_STOPPED, last_time, output.chunk.frame);
   }
   json::write(File(queue->path_ / "status.json", "wb"), queue->result_);
 }
